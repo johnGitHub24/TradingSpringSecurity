@@ -1,0 +1,19 @@
+sequenceDiagram
+  participant C as Client
+  participant AC as AuthController
+  participant AS as AuthService
+  participant JWT as JwtTokenProvider
+  participant F as JwtAuthenticationFilter
+  participant OC as OrderController
+  C->>AC: POST /api/auth/register
+  AC->>AS: BCrypt + save User
+  AS-->>C: 201
+  C->>AC: POST /api/auth/login
+  AC->>AS: AuthenticationManager
+  AS->>JWT: generateToken HS256
+  AS-->>C: 200 + token
+  C->>F: Orders API + Bearer
+  F->>JWT: validate + roles
+  F->>F: SecurityContext
+  F->>OC: 放行
+  OC-->>C: 2xx

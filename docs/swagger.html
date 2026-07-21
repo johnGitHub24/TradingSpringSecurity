@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>TradingSpringSecurity — API 文件（Swagger UI）</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.11.0/swagger-ui.css"/>
+  <style>
+    :root { --bg:#0f1419; --surface:#1a2332; --surface2:#243044; --border:#2d3a4f; --text:#e6edf3; --muted:#8b9cb3; --accent:#3b82f6; --accent2:#10b981; --warn:#f59e0b; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:#fafafa; font-family:"Segoe UI","Microsoft JhengHei",sans-serif; }
+    header.intro { background:linear-gradient(135deg,#1e3a5f 0%,#0f1419 70%); color:var(--text); padding:1.5rem 2rem; line-height:1.6; }
+    header.intro h1 { font-size:1.4rem; margin:0 0 0.25rem; }
+    header.intro .sub { color:var(--muted); font-size:0.9rem; margin:0 0 1rem; }
+    header.intro .links a { color:var(--accent); text-decoration:none; margin-right:1rem; font-size:0.9rem; }
+    .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:0.75rem; margin-top:0.5rem; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:0.8rem 1rem; font-size:0.85rem; }
+    .card h2 { font-size:0.85rem; color:var(--accent2); margin:0 0 0.5rem; }
+    .card table { width:100%; border-collapse:collapse; }
+    .card td { padding:0.15rem 0.3rem 0.15rem 0; color:#c9d4e3; vertical-align:top; }
+    .card td:first-child { color:var(--muted); white-space:nowrap; }
+    .card code { background:#0d1117; color:#79c0ff; padding:0.1rem 0.35rem; border-radius:4px; font-size:0.85em; }
+    .card ul { margin:0; padding-left:1.1rem; color:#c9d4e3; }
+    .card li { margin-bottom:0.2rem; }
+    .note { margin-top:0.75rem; background:var(--surface2); border-left:3px solid var(--warn); padding:0.6rem 0.9rem; font-size:0.82rem; color:var(--muted); border-radius:0 8px 8px 0; }
+    .note code { background:#0d1117; color:#79c0ff; padding:0.1rem 0.35rem; border-radius:4px; }
+    .note b.alert { color:#f59e0b; }
+    #swagger-ui { max-width:1200px; margin:0 auto; }
+  </style>
+</head>
+<body>
+<header class="intro">
+  <h1>TradingSpringSecurity — API 文件</h1>
+  <p class="sub">Auth JWT · Order CRUD／冪等 · 角色 USER／ADMIN · Spring Boot 3.2 · Java 21 · H2（無 Kafka／Redis，對照 TradingSpringBoot）</p>
+  <p class="links">
+    <a href="codeGraphic.html">CodeGraphic</a>
+    <a href="md-viewer.html?src=architecture.md">architecture.md</a>
+    <a href="md-viewer.html?src=testing.md">testing.md</a>
+    <a href="http://localhost:8888/swagger-ui.html" target="_blank">Runtime Swagger UI（:8888）</a>
+  </p>
+  <div class="cards">
+    <div class="card">
+      <h2>啟動與位址</h2>
+      <table>
+        <tr><td>啟動</td><td><code>.\gradlew.bat bootRun</code></td></tr>
+        <tr><td>Port</td><td><b><code>8888</code></b>（application.yml 實際值；<b>不是 8080</b>，部分舊文件誤寫）</td></tr>
+        <tr><td>OpenAPI JSON</td><td><code>http://localhost:8888/v3/api-docs</code></td></tr>
+        <tr><td>Swagger UI</td><td><code>http://localhost:8888/swagger-ui.html</code></td></tr>
+        <tr><td>H2 Console</td><td><code>http://localhost:8888/h2-console</code>（JDBC <code>jdbc:h2:mem:tradingdb</code>，帳號 <code>sa</code>，密碼空白）</td></tr>
+        <tr><td>驗證</td><td><code>.\scripts\check.ps1</code>（或 <code>.\gradlew.bat check</code>）</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h2>API 分組（實際 Controller）</h2>
+      <ul>
+        <li><b>Auth</b>：<code>POST /api/auth/register</code>、<code>POST /api/auth/login</code></li>
+        <li><b>Orders</b>：<code>POST /api/v1/orders</code>（冪等）、<code>GET /api/v1/orders</code>（分頁）、<code>GET /{id}</code>、<code>PATCH /{id}/cancel</code>、<code>DELETE /{id}</code></li>
+        <li>角色：一般操作 <code>USER</code>；刪除等管理操作需 <code>ADMIN</code>。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>認證與範例流程</h2>
+      <ul>
+        <li>JWT（HS256）：帳號需先 <code>POST /api/auth/register</code> 註冊（無內建帳號）。</li>
+        <li><code>POST /api/auth/login</code> 取得 token，點右上 <b>Authorize</b> 輸入 <code>Bearer &lt;token&gt;</code>。</li>
+        <li>範例：register → login → <code>POST /api/v1/orders</code> 下單 → <code>PATCH /{id}/cancel</code> 取消。</li>
+      </ul>
+    </div>
+  </div>
+  <p class="note">
+    <b class="alert">注意：本專案實際埠為 8888</b>（見 <code>application.yml</code> 的 <code>server.port: 8888</code>），文件若寫 8080 為誤植。
+    本頁載入 <code>http://localhost:8888/v3/api-docs</code>，請先啟動應用。若以 <code>file://</code> 直接開啟本頁而無法載入，
+    請改用 <code>http://localhost:8888/swagger-ui.html</code>，或在 docs 目錄啟一個靜態伺服器（例如 <code>python -m http.server</code>）。
+  </p>
+</header>
+<div id="swagger-ui"></div>
+<script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.11.0/swagger-ui-bundle.js" crossorigin></script>
+<script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js" crossorigin></script>
+<script>
+  window.onload = function () {
+    window.ui = SwaggerUIBundle({
+      url: "http://localhost:8888/v3/api-docs",
+      dom_id: "#swagger-ui",
+      deepLinking: true,
+      presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+      plugins: [SwaggerUIBundle.plugins.DownloadUrl],
+      layout: "StandaloneLayout"
+    });
+  };
+</script>
+</body>
+</html>

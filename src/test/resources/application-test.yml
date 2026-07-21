@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:tradingdb-test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+
+app:
+  jwt:
+    secret: test-secret-key-for-junit-only-256bit-minimum-length-padding-xxxxx
+    expiration-ms: 3600000
+
+# 整合測試不印啟動 URL 框
+startup:
+  info:
+    enabled: false
+
+logging:
+  level:
+    com.trading.security: INFO

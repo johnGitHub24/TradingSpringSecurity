@@ -1,0 +1,71 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: trading-spring-security
+
+  datasource:
+    url: jdbc:h2:mem:tradingdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+    hikari:
+      pool-name: trading-hikari
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          batch_size: 50
+    show-sql: false
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:change-me-please-a-very-long-development-secret-key-256bit-minimum}
+    expiration-ms: 3600000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+
+# IntelliJ／bootRun 啟動後 Console 印常用 URL（見 StartupInfoLogger）
+startup:
+  info:
+    enabled: true
+    project-name: TradingSpringSecurity
+    frontend: none            # none | static | vite
+    auth: true
+    h2: true
+    api-docs: true
+    extra-paths: /api/auth/register,/api/auth/login,/api/v1/orders,/swagger-ui.html
+
+logging:
+  level:
+    com.trading.security: INFO

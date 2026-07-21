@@ -1,0 +1,15 @@
+flowchart TB
+  subgraph Auth["/api/auth"]
+    R1[POST /register → 201]
+    L1[POST /login → JWT]
+  end
+  subgraph Orders["/api/v1/orders · 需 JWT"]
+    P[POST / → 201 · 冪等]
+    G1[GET / · GET /id]
+    C1[PATCH /id/cancel]
+    D1[DELETE /id · ADMIN]
+  end
+  Auth --> Orders
+  P --> ID{clientOrderId 存在?}
+  ID -->|是| E409[409 DUPLICATE]
+  ID -->|否| NEW[status NEW]

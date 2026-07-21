@@ -1,0 +1,15 @@
+.gradle/
+build/
+out/
+bin/
+.idea/
+*.iml
+.vscode/
+*.log
+hs_err_pid*.log
+replay_pid*.log
+bash.exe.stackdump
+node_modules/
+.env
+.DS_Store
+Thumbs.db

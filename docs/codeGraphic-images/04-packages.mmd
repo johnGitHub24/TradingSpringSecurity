@@ -1,0 +1,35 @@
+flowchart TB
+  subgraph ctrl [controller]
+    AuthC[AuthController]
+    OrderC[OrderController]
+  end
+  subgraph sec [security]
+    Filter[JwtAuthenticationFilter]
+    Prov[JwtTokenProvider]
+  end
+  subgraph svc [service]
+    AuthS[AuthService]
+    UserS[UserService]
+    OrderS[OrderService]
+  end
+  subgraph data [repository + entity]
+    UR[UserRepository]
+    OR[OrderRepository]
+  end
+  subgraph cfg [config]
+    SC[SecurityConfig]
+    OA[OpenApiConfig]
+  end
+  subgraph ex [exception]
+    GEH[GlobalExceptionHandler]
+  end
+  Filter --> Prov
+  SC --> Filter
+  AuthC --> AuthS
+  AuthS --> Prov
+  AuthS --> UserS
+  UserS --> UR
+  OrderC --> OrderS
+  OrderS --> OR
+  AuthC -.-> GEH
+  OrderC -.-> GEH

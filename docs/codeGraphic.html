@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TradingSpringSecurity — CodeGraphic</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface2: #243044;
+      --border: #2d3a4f;
+      --text: #e6edf3;
+      --muted: #8b9cb3;
+      --accent: #3b82f6;
+      --accent2: #10b981;
+      --warn: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", "Microsoft JhengHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .top {
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, #1e3a5f 0%, #0f1419 70%);
+      padding: 1.5rem 2rem 0;
+    }
+    .top h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+    .top .sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.25rem; }
+    .top .links { margin-bottom: 1rem; font-size: 0.85rem; }
+    .top .links a { color: var(--accent); text-decoration: none; margin-right: 1rem; }
+    .top .links a:hover { text-decoration: underline; }
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+    .tab {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      padding: 0.55rem 1.1rem;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-size: 0.9rem;
+      border-bottom: none;
+    }
+    .tab:hover { color: var(--text); background: var(--surface2); }
+    .tab.active {
+      background: var(--bg);
+      color: var(--accent2);
+      border-color: var(--accent);
+      box-shadow: inset 0 2px 0 var(--accent);
+    }
+    main { padding: 1.5rem 2rem 3rem; max-width: 1100px; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .panel h2 {
+      font-size: 1.2rem;
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 0.4rem;
+      margin-bottom: 0.75rem;
+    }
+    .blurb {
+      color: #c9d4e3;
+      font-size: 0.92rem;
+      margin-bottom: 1rem;
+      max-width: 52rem;
+    }
+    .blurb li { margin-left: 1.1rem; margin-bottom: 0.25rem; }
+    .mermaid {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      overflow-x: auto;
+    }
+    .note {
+      margin-top: 1rem;
+      background: var(--surface2);
+      border-left: 3px solid var(--warn);
+      padding: 0.65rem 0.9rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    footer {
+      padding: 0 2rem 2rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+    @media (max-width: 700px) {
+      .top, main, footer { padding-left: 1rem; padding-right: 1rem; }
+      .tab { flex: 1 1 auto; border-radius: 8px; border-bottom: 1px solid var(--border); }
+      .tabs { gap: 0.5rem; padding-bottom: 0.75rem; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <h1>TradingSpringSecurity — CodeGraphic</h1>
+    <p class="sub">圖為主 · Filter／JWT／API／套件 · 與專案引導教學互補</p>
+    <p class="links">
+      <a href="專案引導教學.html">專案引導教學（長文）</a>
+      <a href="md-viewer.html?src=../%E8%A6%8F%E6%A0%BC%E6%9B%B8.md">規格書（權威）</a>
+      <a href="md-viewer.html?src=architecture.md">architecture.md</a>
+      <a href="swagger.html">API 文件（Swagger）</a>
+    </p>
+    <nav class="tabs" role="tablist" aria-label="CodeGraphic 章節">
+      <button type="button" class="tab active" role="tab" aria-selected="true" data-tab="filter">Filter</button>
+      <button type="button" class="tab" role="tab" aria-selected="false" data-tab="jwt">JWT</button>
+      <button type="button" class="tab" role="tab" aria-selected="false" data-tab="api">API</button>
+      <button type="button" class="tab" role="tab" aria-selected="false" data-tab="packages">套件</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Tab 1: Filter -->
+    <section id="panel-filter" class="panel active" role="tabpanel">
+      <h2>Filter — 安全過濾鏈</h2>
+      <ul class="blurb">
+        <li><code>STATELESS</code>：無 Session；身分靠 JWT 重建。</li>
+        <li>公開：<code>/api/auth/**</code>、Swagger、health、h2-console。</li>
+        <li><code>DELETE /api/v1/orders/**</code> 需 <code>ADMIN</code>；其餘需認證。</li>
+        <li>未認證 → <code>401</code>（HttpStatusEntryPoint）。</li>
+      </ul>
+      <div class="mermaid">
+flowchart LR
+  R[HTTP Request] --> F[JwtAuthenticationFilter]
+  F --> A{authorizeHttpRequests}
+  A -->|permitAll 公開路徑| C[Controller]
+  A -->|DELETE orders + ADMIN| C
+  A -->|anyRequest authenticated| C
+  A -->|未認證| U[401]
+  A -->|無 ADMIN| X[403]
+  C --> S[Service]
+      </div>
+      <p class="note">JWT Filter 掛在 UsernamePasswordAuthenticationFilter <strong>之前</strong>（SecurityConfig）。無效 Token 不在 Filter 硬擋，交由後續授權規則。</p>
+    </section>
+
+    <!-- Tab 2: JWT -->
+    <section id="panel-jwt" class="panel" role="tabpanel" hidden>
+      <h2>JWT — 簽發與驗證</h2>
+      <ul class="blurb">
+        <li>註冊：BCrypt 存密碼；登入：AuthenticationManager → 簽發 HS256。</li>
+        <li>Token 含 username + roles claim；預設約 1 小時（<code>app.jwt.*</code>）。</li>
+        <li>後續請求：<code>Authorization: Bearer …</code> → Filter 寫入 SecurityContext。</li>
+      </ul>
+      <div class="mermaid">
+sequenceDiagram
+  participant C as Client
+  participant AC as AuthController
+  participant AS as AuthService
+  participant JWT as JwtTokenProvider
+  participant F as JwtAuthenticationFilter
+  participant OC as OrderController
+  C->>AC: POST /api/auth/register
+  AC->>AS: BCrypt + save User
+  AS-->>C: 201
+  C->>AC: POST /api/auth/login
+  AC->>AS: AuthenticationManager
+  AS->>JWT: generateToken HS256
+  AS-->>C: 200 + token
+  C->>F: Orders API + Bearer
+  F->>JWT: validate + roles
+  F->>F: SecurityContext
+  F->>OC: 放行
+  OC-->>C: 2xx
+      </div>
+      <p class="note">類別：<code>JwtTokenProvider</code>（簽／驗）、<code>JwtAuthenticationFilter</code>（Header → Context）。</p>
+    </section>
+
+    <!-- Tab 3: API -->
+    <section id="panel-api" class="panel" role="tabpanel" hidden>
+      <h2>API — 請求路徑</h2>
+      <ul class="blurb">
+        <li>Auth：register／login（公開）。</li>
+        <li>Orders：CRUD + cancel；建單冪等鍵 <code>clientOrderId</code> → 重複則 409。</li>
+        <li>刪除僅 ADMIN；取消為狀態轉移（NEW → CANCELLED）。</li>
+      </ul>
+      <div class="mermaid">
+flowchart TB
+  subgraph Auth["/api/auth"]
+    R1[POST /register → 201]
+    L1[POST /login → JWT]
+  end
+  subgraph Orders["/api/v1/orders · 需 JWT"]
+    P[POST / → 201 · 冪等]
+    G1[GET / · GET /id]
+    C1[PATCH /id/cancel]
+    D1[DELETE /id · ADMIN]
+  end
+  Auth --> Orders
+  P --> ID{clientOrderId 存在?}
+  ID -->|是| E409[409 DUPLICATE]
+  ID -->|否| NEW[status NEW]
+      </div>
+      <p class="note">詳細錯誤碼與驗證矩陣見 <code>docs/驗證設計.md</code>；長文流程見專案引導教學。</p>
+    </section>
+
+    <!-- Tab 4: Packages -->
+    <section id="panel-packages" class="panel" role="tabpanel" hidden>
+      <h2>套件 — 類別地圖</h2>
+      <ul class="blurb">
+        <li>請求進 Controller → Service → Repository；安全橫切在 security／config。</li>
+        <li>例外統一由 <code>GlobalExceptionHandler</code> 轉 JSON。</li>
+      </ul>
+      <div class="mermaid">
+flowchart TB
+  subgraph ctrl [controller]
+    AuthC[AuthController]
+    OrderC[OrderController]
+  end
+  subgraph sec [security]
+    Filter[JwtAuthenticationFilter]
+    Prov[JwtTokenProvider]
+  end
+  subgraph svc [service]
+    AuthS[AuthService]
+    UserS[UserService]
+    OrderS[OrderService]
+  end
+  subgraph data [repository + entity]
+    UR[UserRepository]
+    OR[OrderRepository]
+  end
+  subgraph cfg [config]
+    SC[SecurityConfig]
+    OA[OpenApiConfig]
+  end
+  subgraph ex [exception]
+    GEH[GlobalExceptionHandler]
+  end
+  Filter --> Prov
+  SC --> Filter
+  AuthC --> AuthS
+  AuthS --> Prov
+  AuthS --> UserS
+  UserS --> UR
+  OrderC --> OrderS
+  OrderS --> OR
+  AuthC -.-> GEH
+  OrderC -.-> GEH
+      </div>
+      <p class="note">Package 根：<code>com.trading.security</code>。無 Kafka／Redis（對照 TradingSpringBoot）。</p>
+    </section>
+  </main>
+
+  <footer>
+    CodeGraphic · 非權威 · 衝突以規格書為準 · Mermaid CDN
+  </footer>
+
+  <script>
+    mermaid.initialize({ startOnLoad: false, theme: "dark", securityLevel: "loose" });
+
+    const tabs = document.querySelectorAll(".tab");
+    const panels = {
+      filter: document.getElementById("panel-filter"),
+      jwt: document.getElementById("panel-jwt"),
+      api: document.getElementById("panel-api"),
+      packages: document.getElementById("panel-packages")
+    };
+    const rendered = new Set(["filter"]);
+
+    async function renderPanel(id) {
+      if (rendered.has(id)) return;
+      const panel = panels[id];
+      const nodes = panel.querySelectorAll(".mermaid");
+      await mermaid.run({ nodes });
+      rendered.add(id);
+    }
+
+    mermaid.run({ nodes: panels.filter.querySelectorAll(".mermaid") });
+
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", async () => {
+        const id = tab.dataset.tab;
+        tabs.forEach((t) => {
+          t.classList.toggle("active", t === tab);
+          t.setAttribute("aria-selected", t === tab ? "true" : "false");
+        });
+        Object.entries(panels).forEach(([key, panel]) => {
+          const on = key === id;
+          panel.classList.toggle("active", on);
+          panel.hidden = !on;
+        });
+        await renderPanel(id);
+      });
+    });
+  </script>
+</body>
+</html>

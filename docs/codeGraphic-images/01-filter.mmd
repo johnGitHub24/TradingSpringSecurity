@@ -1,0 +1,9 @@
+flowchart LR
+  R[HTTP Request] --> F[JwtAuthenticationFilter]
+  F --> A{authorizeHttpRequests}
+  A -->|permitAll 公開路徑| C[Controller]
+  A -->|DELETE orders + ADMIN| C
+  A -->|anyRequest authenticated| C
+  A -->|未認證| U[401]
+  A -->|無 ADMIN| X[403]
+  C --> S[Service]
