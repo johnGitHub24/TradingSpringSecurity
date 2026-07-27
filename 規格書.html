@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TradingSpringSecurity 規格書</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg:#0f1419; --surface:#1a2332; --surface2:#243044; --border:#2d3a4f;
+      --text:#e6edf3; --muted:#8b9cb3; --accent:#3b82f6; --accent2:#10b981; --warn:#f59e0b;
+    }
+    * { box-sizing:border-box; }
+    body {
+      margin:0; font-family:"Segoe UI","Microsoft JhengHei",sans-serif;
+      background:var(--bg); color:var(--text); line-height:1.65;
+    }
+    .bar {
+      position:sticky; top:0; z-index:10;
+      display:flex; flex-wrap:wrap; align-items:center; gap:0.75rem;
+      padding:0.75rem 1.25rem; background:var(--surface);
+      border-bottom:1px solid var(--border);
+    }
+    .bar a { color:var(--accent); text-decoration:none; }
+    .bar .src { color:var(--muted); font-size:0.85rem; }
+    .bar .badge {
+      font-size:0.75rem; color:var(--warn); border:1px solid var(--warn);
+      border-radius:4px; padding:0.1rem 0.45rem;
+    }
+    main { max-width:880px; margin:0 auto; padding:1.5rem 1.25rem 3rem; }
+    h1,h2,h3,h4 { line-height:1.3; }
+    h1 { font-size:1.7rem; border-bottom:2px solid var(--accent); padding-bottom:0.4rem; }
+    h2 { font-size:1.3rem; margin-top:1.75rem; border-bottom:1px solid var(--border); padding-bottom:0.3rem; }
+    h3 { font-size:1.1rem; margin-top:1.25rem; color:var(--accent2); }
+    a { color:var(--accent); }
+    code, pre { font-family:Consolas,"Courier New",monospace; }
+    code { background:var(--surface2); padding:0.1rem 0.35rem; border-radius:4px; font-size:0.9em; }
+    pre { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:1rem; overflow-x:auto; }
+    pre code { background:transparent; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; font-size:0.92rem; }
+    th, td { border:1px solid var(--border); padding:0.45rem 0.65rem; text-align:left; }
+    th { background:var(--surface2); }
+    blockquote {
+      margin:1rem 0; padding:0.5rem 0.9rem; border-left:3px solid var(--warn);
+      background:var(--surface2); color:var(--muted);
+    }
+    .mermaid { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1rem; overflow-x:auto; }
+    hr { border:none; border-top:1px solid var(--border); margin:1.5rem 0; }
+    footer { max-width:880px; margin:0 auto; padding:0 1.25rem 2rem; color:var(--muted); font-size:0.8rem; }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <a href="docs/codeGraphic.html">← CodeGraphic</a>
+    <span class="badge">companion HTML</span>
+    <span class="src">來源（權威）：規格書.md</span>
+  </div>
+  <main>
+<h1>TradingSpringSecurity 規格書</h1>
+<blockquote>
+<p><strong>本文件為 TradingSpringSecurity 之主規格書。</strong>
+範圍：JWT 認證授權、訂單 REST API、JPA/H2、分層架構與 TDD 測試。</p>
+</blockquote>
+<hr />
+<h2>第 0 章　文件體系</h2>
+<table>
+<thead>
+<tr>
+  <th>文件</th>
+  <th>角色</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong><code>規格書.md</code></strong></td>
+  <td>主規格（本文件）</td>
+</tr>
+<tr>
+  <td><code>TradingSpringSecurity-SPEC.md</code></td>
+  <td>EOS 英文入口／摘要</td>
+</tr>
+<tr>
+  <td><code>README.md</code></td>
+  <td>快速開始</td>
+</tr>
+<tr>
+  <td><code>docs/architecture.md</code></td>
+  <td>架構摘要（EOS）</td>
+</tr>
+<tr>
+  <td><code>docs/testing.md</code></td>
+  <td>測試摘要／DoD（EOS）</td>
+</tr>
+<tr>
+  <td><code>docs/資料庫設計.md</code></td>
+  <td>表、Entity、H2</td>
+</tr>
+<tr>
+  <td><code>docs/驗證設計.md</code></td>
+  <td>JWT、權限、錯誤碼</td>
+</tr>
+<tr>
+  <td><code>docs/測試與CI.md</code></td>
+  <td>Case ID 與 Gradle 指令</td>
+</tr>
+<tr>
+  <td><code>CLAUDE.md</code></td>
+  <td>AI 薄規則（EOS 0.1.4）</td>
+</tr>
+</tbody>
+</table>
+<h3>參考專案</h3>
+<table>
+<thead>
+<tr>
+  <th>來源</th>
+  <th>採用</th>
+  <th>不採用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>TradingSpringBoot</td>
+  <td>Security、分層、訂單模型</td>
+  <td>Kafka、Redis</td>
+</tr>
+<tr>
+  <td>APIGatewayMQ</td>
+  <td>測試 Case ID、文件風格</td>
+  <td>多模組 Gateway</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>第 1 章　系統範圍</h2>
+<h3>1.1 核心功能</h3>
+<table>
+<thead>
+<tr>
+  <th>#</th>
+  <th>功能</th>
+  <th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>註冊 / 登入</td>
+  <td>JWT 發放，USER / ADMIN</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>訂單 CRUD</td>
+  <td>建立、查詢、列表、取消、刪除</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>冪等下單</td>
+  <td><code>clientOrderId</code> UNIQUE，重複 409</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td>監控</td>
+  <td>Actuator health / metrics</td>
+</tr>
+</tbody>
+</table>
+<h3>1.2 不在範圍</h3>
+<ul>
+<li>Kafka、Redis、分散式快取與事件審計</li>
+<li>真實撮合與風控</li>
+</ul>
+<h3>1.3 技術棧</h3>
+<table>
+<thead>
+<tr>
+  <th>項</th>
+  <th>選型</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>語言</td>
+  <td>Java 21、Gradle</td>
+</tr>
+<tr>
+  <td>框架</td>
+  <td>Spring Boot 3.2、Spring MVC</td>
+</tr>
+<tr>
+  <td>資料</td>
+  <td>Spring Data JPA、H2（dev/test）</td>
+</tr>
+<tr>
+  <td>安全</td>
+  <td>Spring Security、JWT（jjwt 0.12）</td>
+</tr>
+<tr>
+  <td>API 文件</td>
+  <td>springdoc-openapi</td>
+</tr>
+<tr>
+  <td>測試</td>
+  <td>JUnit 5、Mockito、MockMvc</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>第 2 章　套件結構</h2>
+<pre><code class="language-text">com.trading.security
+├── config/       SecurityConfig, OpenApiConfig
+├── controller/   AuthController, OrderController
+├── service/      AuthService, UserService, OrderService
+├── repository/   UserRepository, OrderRepository
+├── entity/       UserEntity, OrderEntity
+├── dto/          RegisterRequest, LoginRequest, JwtResponse, ...
+├── domain/       Role, OrderStatus, OrderSide
+├── security/     JwtTokenProvider, JwtAuthenticationFilter
+└── exception/    GlobalExceptionHandler + 領域例外
+</code></pre>
+<hr />
+<h2>第 3 章　資料庫</h2>
+<table>
+<thead>
+<tr>
+  <th>表</th>
+  <th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>users</code></td>
+  <td>使用者，<code>username</code> UNIQUE</td>
+</tr>
+<tr>
+  <td><code>user_roles</code></td>
+  <td>ElementCollection 角色</td>
+</tr>
+<tr>
+  <td><code>orders</code></td>
+  <td>訂單，<code>client_order_id</code> UNIQUE</td>
+</tr>
+</tbody>
+</table>
+<p>整合測試：<code>DB-001</code> 驗證表存在。</p>
+<hr />
+<h2>第 4 章　API</h2>
+<h3>4.1 認證</h3>
+<table>
+<thead>
+<tr>
+  <th>Method</th>
+  <th>路徑</th>
+  <th>成功</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>POST</td>
+  <td><code>/api/auth/register</code></td>
+  <td>201</td>
+</tr>
+<tr>
+  <td>POST</td>
+  <td><code>/api/auth/login</code></td>
+  <td>200 + JwtResponse</td>
+</tr>
+</tbody>
+</table>
+<h3>4.2 訂單（需 Bearer JWT，DELETE 需 ADMIN）</h3>
+<table>
+<thead>
+<tr>
+  <th>Method</th>
+  <th>路徑</th>
+  <th>成功</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>POST</td>
+  <td><code>/api/v1/orders</code></td>
+  <td>201</td>
+</tr>
+<tr>
+  <td>GET</td>
+  <td><code>/api/v1/orders</code></td>
+  <td>200 分頁</td>
+</tr>
+<tr>
+  <td>GET</td>
+  <td><code>/api/v1/orders/{id}</code></td>
+  <td>200</td>
+</tr>
+<tr>
+  <td>PATCH</td>
+  <td><code>/api/v1/orders/{id}/cancel</code></td>
+  <td>200</td>
+</tr>
+<tr>
+  <td>DELETE</td>
+  <td><code>/api/v1/orders/{id}</code></td>
+  <td>204</td>
+</tr>
+</tbody>
+</table>
+<h3>4.3 錯誤碼</h3>
+<table>
+<thead>
+<tr>
+  <th>HTTP</th>
+  <th>errorCode</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>400</td>
+  <td>VALIDATION_FAILED</td>
+</tr>
+<tr>
+  <td>401</td>
+  <td>INVALID_CREDENTIALS / 未認證</td>
+</tr>
+<tr>
+  <td>403</td>
+  <td>權限不足</td>
+</tr>
+<tr>
+  <td>404</td>
+  <td>ORDER_NOT_FOUND</td>
+</tr>
+<tr>
+  <td>409</td>
+  <td>DUPLICATE_ORDER / USERNAME_EXISTS</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>第 5 章　安全</h2>
+<table>
+<thead>
+<tr>
+  <th>機制</th>
+  <th>實作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>密碼</td>
+  <td>BCrypt</td>
+</tr>
+<tr>
+  <td>Token</td>
+  <td>HS256，<code>app.jwt.secret</code>、<code>expiration-ms</code></td>
+</tr>
+<tr>
+  <td>過濾器</td>
+  <td>JwtAuthenticationFilter</td>
+</tr>
+<tr>
+  <td>Session</td>
+  <td>STATELESS</td>
+</tr>
+<tr>
+  <td>授權</td>
+  <td>DELETE <code>/api/v1/orders/**</code> → ROLE_ADMIN</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>第 6 章　設定</h2>
+<p><code>application.yml</code> / <code>application-test.yml</code>：僅 H2；JWT 置於 <code>app.jwt</code>。</p>
+<hr />
+<h2>第 7 章　測試規格</h2>
+<ul>
+<li>單元：<code>gradlew test</code>（排除 <code>@Tag(&quot;integration&quot;)</code>）</li>
+<li>整合：<code>gradlew integrationTest</code></li>
+<li>驗收：<code>gradlew check</code></li>
+</ul>
+<p>完整 Case ID 見 <code>docs/測試與CI.md</code>。</p>
+<h3>DoD</h3>
+<ul>
+<li>[ ] <code>gradlew check</code> 全綠</li>
+<li>[ ] 建單 201、無 token 401、驗證 400、冪等 409</li>
+<li>[ ] 非 ADMIN 刪除 403、ADMIN 刪除 204</li>
+<li>[ ] Swagger 與 Actuator health 可存取</li>
+</ul>
+<hr />
+<p><em>最後更新：2026-07-09 | Spring Boot 3.2 · Security(JWT) · JPA · H2</em></p>
+
+  </main>
+  <footer>由 eos-minimal/hooks/md-to-companion-html 產生 · 請改 .md 後重跑腳本 · 勿當權威契約</footer>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: "dark", securityLevel: "loose" });
+  </script>
+</body>
+</html>
