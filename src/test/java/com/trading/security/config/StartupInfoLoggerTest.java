@@ -11,6 +11,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -77,12 +78,12 @@ class StartupInfoLoggerTest {
     private static String captureStdout(Runnable action) {
         PrintStream original = System.out;
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        try (PrintStream ps = new PrintStream(buffer)) {
+        try (PrintStream ps = new PrintStream(buffer, true, StandardCharsets.UTF_8)) {
             System.setOut(ps);
             action.run();
         } finally {
             System.setOut(original);
         }
-        return buffer.toString();
+        return buffer.toString(StandardCharsets.UTF_8);
     }
 }
