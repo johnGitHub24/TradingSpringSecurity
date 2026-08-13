@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TradingSpringSecurity Specification</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg:#0f1419; --surface:#1a2332; --surface2:#243044; --border:#2d3a4f;
+      --text:#e6edf3; --muted:#8b9cb3; --accent:#3b82f6; --accent2:#10b981; --warn:#f59e0b;
+    }
+    * { box-sizing:border-box; }
+    body {
+      margin:0; font-family:"Segoe UI","Microsoft JhengHei",sans-serif;
+      background:var(--bg); color:var(--text); line-height:1.65;
+    }
+    .bar {
+      position:sticky; top:0; z-index:10;
+      display:flex; flex-wrap:wrap; align-items:center; gap:0.75rem;
+      padding:0.75rem 1.25rem; background:var(--surface);
+      border-bottom:1px solid var(--border);
+    }
+    .bar a { color:var(--accent); text-decoration:none; }
+    .bar .src { color:var(--muted); font-size:0.85rem; }
+    .bar .badge {
+      font-size:0.75rem; color:var(--warn); border:1px solid var(--warn);
+      border-radius:4px; padding:0.1rem 0.45rem;
+    }
+    main { max-width:880px; margin:0 auto; padding:1.5rem 1.25rem 3rem; }
+    h1,h2,h3,h4 { line-height:1.3; }
+    h1 { font-size:1.7rem; border-bottom:2px solid var(--accent); padding-bottom:0.4rem; }
+    h2 { font-size:1.3rem; margin-top:1.75rem; border-bottom:1px solid var(--border); padding-bottom:0.3rem; }
+    h3 { font-size:1.1rem; margin-top:1.25rem; color:var(--accent2); }
+    a { color:var(--accent); }
+    code, pre { font-family:Consolas,"Courier New",monospace; }
+    code { background:var(--surface2); padding:0.1rem 0.35rem; border-radius:4px; font-size:0.9em; }
+    pre { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:1rem; overflow-x:auto; }
+    pre code { background:transparent; padding:0; }
+    table { border-collapse:collapse; width:100%; margin:1rem 0; font-size:0.92rem; }
+    th, td { border:1px solid var(--border); padding:0.45rem 0.65rem; text-align:left; }
+    th { background:var(--surface2); }
+    blockquote {
+      margin:1rem 0; padding:0.5rem 0.9rem; border-left:3px solid var(--warn);
+      background:var(--surface2); color:var(--muted);
+    }
+    .mermaid { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1rem; overflow-x:auto; }
+    hr { border:none; border-top:1px solid var(--border); margin:1.5rem 0; }
+    footer { max-width:880px; margin:0 auto; padding:0 1.25rem 2rem; color:var(--muted); font-size:0.8rem; }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <a href="docs/codeGraphic.html">← CodeGraphic</a>
+    <span class="badge">companion HTML</span>
+    <span class="src">來源（權威）：TradingSpringSecurity-SPEC.md</span>
+  </div>
+  <main>
+<h1>TradingSpringSecurity Specification</h1>
+<blockquote>
+<p><strong>EOS 入口規格（英文摘要）。</strong> 領域細節以 <a href="%E8%A6%8F%E6%A0%BC%E6%9B%B8.html">規格書.md</a> 為準。<br />
+Docs standard: EngineeringOS eos-minimal @ 0.1.4 — <code>knowledge/documentation.md</code></p>
+</blockquote>
+<h2>0. Document map</h2>
+<table>
+<thead>
+<tr>
+  <th>File</th>
+  <th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><a href="%E8%A6%8F%E6%A0%BC%E6%9B%B8.html">規格書.md</a></td>
+  <td><strong>主規格書（權威）</strong></td>
+</tr>
+<tr>
+  <td>This file</td>
+  <td>EOS 英文入口／摘要</td>
+</tr>
+<tr>
+  <td><a href="docs/architecture.html">docs/architecture.md</a></td>
+  <td>分層／模組</td>
+</tr>
+<tr>
+  <td><a href="docs/testing.html">docs/testing.md</a></td>
+  <td>測試／DoD</td>
+</tr>
+<tr>
+  <td><a href="docs/%E8%B3%87%E6%96%99%E5%BA%AB%E8%A8%AD%E8%A8%88.html">docs/資料庫設計.md</a></td>
+  <td>users／orders</td>
+</tr>
+<tr>
+  <td><a href="docs/%E9%A9%97%E8%AD%89%E8%A8%AD%E8%A8%88.html">docs/驗證設計.md</a></td>
+  <td>JWT、權限矩陣、錯誤碼</td>
+</tr>
+<tr>
+  <td><a href="docs/%E6%B8%AC%E8%A9%A6%E8%88%87CI.html">docs/測試與CI.md</a></td>
+  <td>Case ID</td>
+</tr>
+<tr>
+  <td><a href="CLAUDE.html">CLAUDE.md</a></td>
+  <td>AI 薄規則</td>
+</tr>
+<tr>
+  <td><a href="README.html">README.md</a></td>
+  <td>快速開始</td>
+</tr>
+</tbody>
+</table>
+<h2>1. Scope</h2>
+<ul>
+<li><strong>Purpose:</strong> 專注 Spring Security + JWT 與訂單 CRUD（H2）；對照 TradingSpringBoot 但無 Kafka／Redis。</li>
+<li><strong>Stack:</strong> Java 21 · Spring Boot 3.2 · Spring Security(JWT) · JPA · H2 · springdoc-openapi · JUnit 5</li>
+<li><strong>Non-goals:</strong> Kafka、Redis、真實撮合、風控規則鏈</li>
+</ul>
+<h2>2. Architecture</h2>
+<p><code>controller</code> → <code>service</code> → <code>repository</code>；<code>security</code> JWT Filter + <code>SecurityConfig</code>。<br />
+見 <a href="docs/architecture.html">docs/architecture.md</a>。</p>
+<h2>3. API / Contract</h2>
+<table>
+<thead>
+<tr>
+  <th>Method</th>
+  <th>Path</th>
+  <th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>POST</td>
+  <td><code>/api/auth/register</code>、<code>/login</code></td>
+  <td>註冊 201；登入 200 + JWT</td>
+</tr>
+<tr>
+  <td>POST</td>
+  <td><code>/api/v1/orders</code></td>
+  <td>201；authenticated USER／ADMIN</td>
+</tr>
+<tr>
+  <td>GET</td>
+  <td><code>/api/v1/orders</code>、<code>/api/v1/orders/{id}</code></td>
+  <td>分頁／單筆</td>
+</tr>
+<tr>
+  <td>PATCH</td>
+  <td><code>/api/v1/orders/{id}/cancel</code></td>
+  <td>→ CANCELLED</td>
+</tr>
+<tr>
+  <td>DELETE</td>
+  <td><code>/api/v1/orders/{id}</code></td>
+  <td>204；<strong>ADMIN only</strong></td>
+</tr>
+</tbody>
+</table>
+<h2>4. Test DoD</h2>
+<ul>
+<li>[ ] <code>.\scripts\check.ps1</code>／<code>.\gradlew.bat check</code> green</li>
+<li>[ ] 建單 201、無 token 401、驗證 400、冪等 409</li>
+<li>[ ] 非 ADMIN 刪除 403、ADMIN 刪除 204；DB-001 schema</li>
+</ul>
+<p>詳見 <a href="docs/testing.html">docs/testing.md</a>、<a href="docs/%E6%B8%AC%E8%A9%A6%E8%88%87CI.html">docs/測試與CI.md</a>。</p>
+<h2>5. Changelog</h2>
+<table>
+<thead>
+<tr>
+  <th>Date</th>
+  <th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>2026-07-10</td>
+  <td>EOS SPEC 入口；摘自 規格書／SecurityConfig／Controllers／測試與CI</td>
+</tr>
+</tbody>
+</table>
+
+  </main>
+  <footer>由 eos-minimal/hooks/md-to-companion-html 產生 · 請改 .md 後重跑腳本 · 勿當權威契約</footer>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: "dark", securityLevel: "loose" });
+  </script>
+</body>
+</html>

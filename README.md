@@ -17,6 +17,14 @@
 | [docs/驗證設計.md](docs/驗證設計.md) | 驗證／權限 |
 | [CLAUDE.md](CLAUDE.md) | AI 薄規則 |
 | [scripts/README.md](scripts/README.md) | 驗證／啟動腳本 |
+| [docs/swagger.html](docs/swagger.html) | **API（Swagger／介面）** |
+
+### 教學（非權威，勿刪）
+
+| 文件 | 說明 |
+|------|------|
+| [docs/專案引導教學.html](docs/專案引導教學.html) | 教學 |
+| [docs/專案引導教學.md](docs/專案引導教學.md) | 教學 |
 
 ## 快速開始
 
