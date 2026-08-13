@@ -19,13 +19,16 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * 整合測試：覆蓋 JWT 保護下的訂單 API 與角色授權。
+ * 【職責】整合測試 JWT 保護下的訂單 API 與角色授權。
+ * 【技巧】MockMvc + H2 + 真實 SecurityFilterChain；ADMIN 以 Repository 種子帳號登入。
+ * 【概念】與 ORDER-001, SEC-001 等單元層同一契約：201、401、400、409、404、403、204。
  */
 @Tag("integration")
 @SpringBootTest
@@ -83,9 +86,12 @@ class SecurityApiIntegrationTest {
                 "side", "BUY", "quantity", 0.5, "price", 65000);
     }
 
-    // SEC-001
+    /**
+     * CASE SEC-001 / ORDER-001 / JWT-001：已認證建單 201、status=NEW。
+     * Given: 合法 JWT；When: POST /api/v1/orders；Then: 201 且 NEW。
+     */
     @Test
-    void createOrder_authenticated_returns201() throws Exception {
+    void SEC_001_createOrder_authenticated_returns201() throws Exception {
         String token = registerAndLogin("sec001", "secret123");
 
         mockMvc.perform(post("/api/v1/orders")
@@ -97,18 +103,40 @@ class SecurityApiIntegrationTest {
                 .andExpect(jsonPath("$.status").value("NEW"));
     }
 
-    // SEC-002
+    /**
+     * CASE SEC-002：無 token 建單 401。
+     * Given: 未帶 Authorization；When: POST /api/v1/orders；Then: 401。
+     */
     @Test
-    void createOrder_withoutToken_returns401() throws Exception {
+    void SEC_002_createOrder_withoutToken_returns401() throws Exception {
         mockMvc.perform(post("/api/v1/orders")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(order("ord-sec-002"))))
                 .andExpect(status().isUnauthorized());
     }
 
-    // SEC-003
+    /**
+     * CASE JWT-002：竄改 Token 存取受保護端點 401。
+     * Given: 合法 Token 尾端被改；When: POST /api/v1/orders；Then: 401。
+     */
     @Test
-    void createOrder_withInvalidBody_returns400() throws Exception {
+    void JWT_002_createOrder_withTamperedToken_returns401() throws Exception {
+        String token = registerAndLogin("jwt002", "secret123");
+        String tampered = token.substring(0, token.length() - 2) + "xx";
+
+        mockMvc.perform(post("/api/v1/orders")
+                        .header("Authorization", "Bearer " + tampered)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(order("ord-jwt-002"))))
+                .andExpect(status().isUnauthorized());
+    }
+
+    /**
+     * CASE SEC-003：驗證失敗 400 VALIDATION_FAILED。
+     * Given: 空 clientOrderId 與非法數量；When: 建單；Then: 400。
+     */
+    @Test
+    void SEC_003_createOrder_withInvalidBody_returns400() throws Exception {
         String token = registerAndLogin("sec003", "secret123");
 
         mockMvc.perform(post("/api/v1/orders")
@@ -120,9 +148,12 @@ class SecurityApiIntegrationTest {
                 .andExpect(jsonPath("$.errorCode").value("VALIDATION_FAILED"));
     }
 
-    // SEC-004
+    /**
+     * CASE SEC-004 / ORDER-002：冪等鍵重複 409 DUPLICATE_ORDER。
+     * Given: 同一 clientOrderId 已建單；When: 再 POST；Then: 409。
+     */
     @Test
-    void createOrder_duplicateClientOrderId_returns409() throws Exception {
+    void SEC_004_createOrder_duplicateClientOrderId_returns409() throws Exception {
         String token = registerAndLogin("sec004", "secret123");
 
         mockMvc.perform(post("/api/v1/orders")
@@ -139,9 +170,47 @@ class SecurityApiIntegrationTest {
                 .andExpect(jsonPath("$.errorCode").value("DUPLICATE_ORDER"));
     }
 
-    // SEC-005
+    /**
+     * CASE ORDER-003：查無訂單 404 ORDER_NOT_FOUND。
+     * Given: 已認證、不存在的 id；When: GET /api/v1/orders/{id}；Then: 404。
+     */
     @Test
-    void cancelOrder_setsStatusCancelled() throws Exception {
+    void ORDER_003_getOrder_whenMissing_returns404() throws Exception {
+        String token = registerAndLogin("ord003", "secret123");
+
+        mockMvc.perform(get("/api/v1/orders/99999")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorCode").value("ORDER_NOT_FOUND"));
+    }
+
+    /**
+     * CASE ORDER-005：已認證列表 200 且含剛建立的訂單。
+     * Given: 已建一筆；When: GET /api/v1/orders；Then: 200 且 content 非空。
+     */
+    @Test
+    void ORDER_005_listOrders_authenticated_returns200() throws Exception {
+        String token = registerAndLogin("ord005", "secret123");
+        mockMvc.perform(post("/api/v1/orders")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(order("ord-list-005"))))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/v1/orders")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[*].clientOrderId").value(
+                        org.hamcrest.Matchers.hasItem("ord-list-005")));
+    }
+
+    /**
+     * CASE SEC-005 / ORDER-004：取消 → CANCELLED。
+     * Given: 已建 NEW 訂單；When: PATCH …/cancel；Then: 200 且 CANCELLED。
+     */
+    @Test
+    void SEC_005_cancelOrder_setsStatusCancelled() throws Exception {
         String token = registerAndLogin("sec005", "secret123");
 
         String body = mockMvc.perform(post("/api/v1/orders")
@@ -157,9 +226,12 @@ class SecurityApiIntegrationTest {
                 .andExpect(jsonPath("$.status").value("CANCELLED"));
     }
 
-    // SEC-006
+    /**
+     * CASE SEC-006：非 ADMIN 刪除 403。
+     * Given: USER JWT 與自己的訂單；When: DELETE；Then: 403。
+     */
     @Test
-    void deleteOrder_asNonAdmin_returns403() throws Exception {
+    void SEC_006_deleteOrder_asNonAdmin_returns403() throws Exception {
         String token = registerAndLogin("sec006", "secret123");
 
         String body = mockMvc.perform(post("/api/v1/orders")
@@ -174,9 +246,12 @@ class SecurityApiIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
-    // SEC-007 (admin delete 204)
+    /**
+     * CASE SEC-007 / JWT-003：ADMIN 刪除 204。
+     * Given: ADMIN Token 與 USER 建立的訂單；When: DELETE；Then: 204。
+     */
     @Test
-    void deleteOrder_asAdmin_returns204() throws Exception {
+    void SEC_007_deleteOrder_asAdmin_returns204() throws Exception {
         seedAdmin("admin007", "secret123");
         String adminToken = loginExisting("admin007", "secret123");
         String userToken = registerAndLogin("sec007user", "secret123");

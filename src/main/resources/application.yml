@@ -1,5 +1,5 @@
 server:
-  port: 8888
+  port: 8080
 
 spring:
   application:
@@ -64,6 +64,7 @@ startup:
     auth: true
     h2: true
     api-docs: true
+    probe: true
     extra-paths: /api/auth/register,/api/auth/login,/api/v1/orders,/swagger-ui.html
 
 logging:

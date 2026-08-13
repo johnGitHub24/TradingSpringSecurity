@@ -8,6 +8,8 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.io.PrintStream;
+import java.net.HttpURLConnection;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 
 import java.util.ArrayList;
@@ -39,6 +41,7 @@ public class StartupInfoLogger implements ApplicationListener<ApplicationReadyEv
         boolean auth = env.getProperty("startup.info.auth", Boolean.class, false);
         boolean h2 = env.getProperty("startup.info.h2", Boolean.class, true);
         boolean apiDocs = env.getProperty("startup.info.api-docs", Boolean.class, true);
+        boolean probe = Boolean.TRUE.equals(env.getProperty("startup.info.probe", Boolean.class, true));
 
         PrintStream out = utf8Out();
         out.println();
@@ -46,7 +49,7 @@ public class StartupInfoLogger implements ApplicationListener<ApplicationReadyEv
         out.printf("║  %-70s║%n", project + " 後端已啟動 — 使用連結");
         out.println("╠════════════════════════════════════════════════════════════════════════╣");
         out.println("║ 【後端 API / 工具】                                                      ║");
-        out.printf("║   健康檢查     %s%n", base + "/actuator/health");
+        out.printf("║   健康檢查     %s%s%n", base + "/actuator/health", mark(probe, base + "/actuator/health"));
         out.printf("║   應用資訊     %s%n", base + "/actuator/info");
         if (apiDocs) {
             out.printf("║   Swagger UI   %s%n", base + "/swagger-ui.html");
@@ -101,6 +104,33 @@ public class StartupInfoLogger implements ApplicationListener<ApplicationReadyEv
      * 【職責】以 UTF-8 寫出 banner（與 JVM stdout.encoding=UTF-8、IDE Console UTF-8 對齊）。
      * 【技巧】勿依賴系統預設 MS950；端到端 UTF-8 才能 run-anywhere。
      */
+
+    private static String mark(boolean probe, String url) {
+        if (!probe || url == null || !url.startsWith("http")) {
+            return "";
+        }
+        return "  [" + (isUp(url) ? "UP" : "DOWN") + "]";
+    }
+
+    private static boolean isUp(String url) {
+        HttpURLConnection conn = null;
+        try {
+            conn = (HttpURLConnection) URI.create(url).toURL().openConnection();
+            conn.setConnectTimeout(800);
+            conn.setReadTimeout(800);
+            conn.setRequestMethod("GET");
+            conn.setInstanceFollowRedirects(true);
+            int code = conn.getResponseCode();
+            return code >= 200 && code < 500;
+        } catch (Exception ex) {
+            return false;
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
+    }
+
     private static PrintStream utf8Out() {
         return new PrintStream(System.out, true, StandardCharsets.UTF_8);
     }

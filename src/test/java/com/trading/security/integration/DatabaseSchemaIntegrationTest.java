@@ -12,7 +12,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 整合測試：覆蓋資料庫 schema／實體映射。
+ * 【職責】整合測試 H2 schema 含 users／user_roles／orders。
+ * 【技巧】以 JdbcTemplate 查 INFORMATION_SCHEMA，驗證 JPA ddl-auto 結果。
+ * 【概念】與 DB-001 單元層（Entity @Table 名稱）同一契約。
  */
 @Tag("integration")
 @SpringBootTest
@@ -22,9 +24,12 @@ class DatabaseSchemaIntegrationTest {
     @Autowired
     JdbcTemplate jdbcTemplate;
 
-    // DB-001
+    /**
+     * CASE DB-001：PUBLIC schema 含 USERS、USER_ROLES、ORDERS。
+     * Given: Spring Boot 已啟動並套用 Entity；When: 查 INFORMATION_SCHEMA；Then: 三表存在。
+     */
     @Test
-    void schema_containsUsersRolesAndOrdersTables() {
+    void DB_001_schema_containsUsersRolesAndOrdersTables() {
         List<String> tables = jdbcTemplate.queryForList(
                 "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC'",
                 String.class);

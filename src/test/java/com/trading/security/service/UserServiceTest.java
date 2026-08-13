@@ -24,7 +24,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * 單元測試：覆蓋 {@link com.trading.security.service.UserService}。
+ * 【職責】單元測試 {@link UserService}：註冊雜湊密碼、帳號衝突、載入 UserDetails。
+ * 【技巧】Mock Repository 與 PasswordEncoder，不啟動 JPA／Security Filter。
+ * 【概念】與 USER-001, AUTH-003 整合層同一契約：成功寫入雜湊；重複帳號拋衝突（HTTP 409）。
  */
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -37,9 +39,12 @@ class UserServiceTest {
     @InjectMocks
     UserService userService;
 
-    // USER-UNIT-001
+    /**
+     * CASE USER-001：帳號可用時編碼密碼並儲存 USER 角色。
+     * Given: existsByUsername=false、encoder 回 encoded；When: register；Then: 持久化雜湊而非明文。
+     */
     @Test
-    void register_whenUsernameAvailable_encodesPasswordAndSaves() {
+    void USER_001_register_whenUsernameAvailable_encodesPasswordAndSaves() {
         when(userRepository.existsByUsername("alice")).thenReturn(false);
         when(passwordEncoder.encode("secret123")).thenReturn("encoded");
         when(userRepository.save(any(UserEntity.class))).thenAnswer(inv -> {
@@ -57,9 +62,12 @@ class UserServiceTest {
         assertThat(captor.getValue().getRoles()).containsExactly(Role.USER);
     }
 
-    // USER-UNIT-002
+    /**
+     * CASE AUTH-003：重複 username 拋 UsernameAlreadyExistsException 且不 save。
+     * Given: existsByUsername=true；When: register；Then: 衝突例外（整合層 409 USERNAME_EXISTS）。
+     */
     @Test
-    void register_whenUsernameExists_throwsUsernameAlreadyExists() {
+    void AUTH_003_register_whenUsernameExists_throwsUsernameAlreadyExists() {
         when(userRepository.existsByUsername("alice")).thenReturn(true);
 
         assertThatThrownBy(() -> userService.register("alice", "secret123", Set.of(Role.USER)))
@@ -68,8 +76,12 @@ class UserServiceTest {
         verify(userRepository, never()).save(any());
     }
 
+    /**
+     * CASE USER-001 / JWT-003：載入使用者時把領域角色轉成 ROLE_ 前綴。
+     * Given: 既有 USER+ADMIN；When: loadUserByUsername；Then: authorities 含 ROLE_USER 與 ROLE_ADMIN。
+     */
     @Test
-    void loadUserByUsername_whenFound_returnsUserDetailsWithRoles() {
+    void USER_001_loadUserByUsername_whenFound_returnsUserDetailsWithRoles() {
         UserEntity user = UserEntity.builder()
                 .username("alice")
                 .password("encoded")

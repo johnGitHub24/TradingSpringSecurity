@@ -1,7 +1,7 @@
 # TradingSpringSecurity Specification
 
 > **EOS 入口規格（英文摘要）。** 領域細節以 [規格書.md](規格書.md) 為準。  
-> Docs standard: EngineeringOS eos-minimal @ 0.1.4 — `knowledge/documentation.md`
+> Docs standard: EngineeringOS eos-minimal @ 0.1.10 — `knowledge/documentation.md`
 
 ## 0. Document map
 
@@ -13,7 +13,7 @@
 | [docs/testing.md](docs/testing.md) | 測試／DoD |
 | [docs/資料庫設計.md](docs/資料庫設計.md) | users／orders |
 | [docs/驗證設計.md](docs/驗證設計.md) | JWT、權限矩陣、錯誤碼 |
-| [docs/測試與CI.md](docs/測試與CI.md) | Case ID |
+| [docs/testing.md](docs/testing.md) | Case ID |
 | [CLAUDE.md](CLAUDE.md) | AI 薄規則 |
 | [README.md](README.md) | 快速開始 |
 
@@ -41,13 +41,15 @@
 ## 4. Test DoD
 
 - [ ] `.\scripts\check.ps1`／`.\gradlew.bat check` green
-- [ ] 建單 201、無 token 401、驗證 400、冪等 409
+- [ ] 建單 201、無 token 401、驗證 400、冪等 409、不存在 404
 - [ ] 非 ADMIN 刪除 403、ADMIN 刪除 204；DB-001 schema
+- [ ] Paired Case IDs（AUTH-001、SEC-001、ORDER-001…）on unit **and** integration
 
-詳見 [docs/testing.md](docs/testing.md)、[docs/測試與CI.md](docs/測試與CI.md)。
+詳見 [docs/testing.md](docs/testing.md)、[docs/testing.md](docs/testing.md)。
 
 ## 5. Changelog
 
 | Date | Note |
 |------|------|
+| 2026-08-13 | 單元／整合成對 Case ID；README 改 check.ps1 + Gradle bootRun |
 | 2026-07-10 | EOS SPEC 入口；摘自 規格書／SecurityConfig／Controllers／測試與CI |
